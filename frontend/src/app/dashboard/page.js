@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { getExpenses } from "../../services/api";
+import { getSupabaseClient } from "../../services/supabaseClient";
 import {
   PieChart,
   Pie,
@@ -35,10 +36,88 @@ export default function Dashboard() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
+  // ================= REALTIME + INITIAL LOAD =================
   useEffect(() => {
-    getExpenses().then((res) => setExpenses(res.data));
+    let mounted = true;
+    console.log(
+      "Dashboard mounted, fetching initial expenses and setting up realtime...",
+    );
+    const loadInitial = async () => {
+      try {
+        const res = await getExpenses();
+        if (mounted) setExpenses(res.data);
+      } catch (err) {
+        console.error("Failed to fetch expenses:", err);
+      }
+    };
+
+    loadInitial();
+
+    const supabase = getSupabaseClient();
+    console.log(
+      "Supabase client:",
+      supabase ? "initialized" : "null - check NEXT_PUBLIC_SUPABASE_* env vars",
+    );
+    if (!supabase) return;
+
+    const channel = supabase.channel("expenses-realtime");
+
+    channel.on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "expenses_expense" },
+      (payload) => {
+        console.log("Supabase realtime payload:", payload);
+        if (typeof inactivityTimer !== "undefined")
+          clearTimeout(inactivityTimer);
+        if (!mounted) return;
+
+        const type = payload.eventType;
+        const newRecord = payload.new;
+        const oldRecord = payload.old;
+
+        setExpenses((prev) => {
+          if (type === "INSERT") return [newRecord, ...prev];
+
+          if (type === "UPDATE")
+            return prev.map((r) => (r.id === newRecord.id ? newRecord : r));
+
+          if (type === "DELETE")
+            return prev.filter((r) => r.id !== oldRecord.id);
+
+          return prev;
+        });
+      },
+    );
+
+    // subscribe and log status
+    const sub = channel.subscribe((status) =>
+      console.log("Realtime subscription status:", status),
+    );
+
+    console.log("Subscribed to Supabase realtime channel:", {
+      topic: channel.topic,
+      state: channel.state,
+      sub,
+    });
+
+    // inactivity hint if no events arrive in 10s
+    const inactivityTimer = setTimeout(
+      () =>
+        console.log(
+          "No realtime events received within 10s — check Network WS & Supabase table policies",
+        ),
+      10000,
+    );
+
+    return () => {
+      mounted = false;
+      console.log("Unsubscribing Supabase realtime channel");
+      if (typeof inactivityTimer !== "undefined") clearTimeout(inactivityTimer);
+      supabase.removeChannel(channel);
+    };
   }, []);
 
+  // ================= FILTER =================
   const filteredExpenses = useMemo(() => {
     return expenses.filter((e) => {
       if (startDate && e.date < startDate) return false;
@@ -146,7 +225,6 @@ export default function Dashboard() {
 
       {/* ================= CHARTS GRID ================= */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* PIE CHART */}
         <ChartCard title="Category Distribution">
           <ResponsiveContainer width="100%" height={260}>
             <PieChart>
@@ -172,7 +250,6 @@ export default function Dashboard() {
           </ResponsiveContainer>
         </ChartCard>
 
-        {/* CATEGORY BAR */}
         <ChartCard title="Category Comparison">
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={categoryData}>
@@ -185,7 +262,6 @@ export default function Dashboard() {
           </ResponsiveContainer>
         </ChartCard>
 
-        {/* MONTHLY TREND */}
         <ChartCard title="Monthly Trend">
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={monthlyData}>
@@ -203,7 +279,6 @@ export default function Dashboard() {
           </ResponsiveContainer>
         </ChartCard>
 
-        {/* DAILY TREND */}
         <ChartCard title="Daily Trend">
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={dailyData}>
