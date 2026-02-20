@@ -19,10 +19,10 @@ def get_top_headlines():
 
     params = {
         "apikey": api_key,
-        "q": "technology",
+        "q": "technology,finance",
         "country": "in",
         "language": "en,hi",
-        "category": "education,technology",
+        "category": "technology",
     }
 
     response = requests.get(url, params=params)
