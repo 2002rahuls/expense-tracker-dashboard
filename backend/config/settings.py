@@ -12,10 +12,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv("SECRET_KEY", 'django-insecure-w$t4zxvk=pf0fy0hi4vjzbia(=za5kbrl7srjm9clck7$i-s@9')
-
+# SECRET_KEY = os.getenv("SECRET_KEY", 'django-insecure-w$t4zxvk=pf0fy0hi4vjzbia(=za5kbrl7srjm9clck7$i-s@9')
+SECRET_KEY = os.getenv("SECRET_KEY")
+DEBUG = os.getenv("DEBUG", "False") == "True"
+ALLOWED_HOSTS = ["*"]
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "yes")
+# DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "yes")
 
 # Hosts allowed to connect. Default to all for simple Railway setup; override with env var.
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "*").split(",")
