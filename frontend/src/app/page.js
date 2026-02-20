@@ -40,19 +40,35 @@ export default function Home() {
   };
 
   return (
-    <div>
-      <h1>Expense Tracker</h1>
+    <div className="container">
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 16,
+        }}
+      >
+        <h1 style={{ margin: 0 }}>Expense Tracker</h1>
+        <div className="muted">Manage your expenses</div>
+      </div>
 
-      <ExpenseForm
-        onSubmit={editing ? handleUpdate : handleCreate}
-        initialData={editing}
-      />
+      <div className="row">
+        <div className="col" style={{ maxWidth: 520 }}>
+          <ExpenseForm
+            onSubmit={editing ? handleUpdate : handleCreate}
+            initialData={editing}
+          />
+        </div>
 
-      <ExpenseList
-        expenses={expenses}
-        onEdit={setEditing}
-        onDelete={handleDelete}
-      />
+        <div className="col">
+          <ExpenseList
+            expenses={expenses}
+            onEdit={setEditing}
+            onDelete={handleDelete}
+          />
+        </div>
+      </div>
     </div>
   );
 }
