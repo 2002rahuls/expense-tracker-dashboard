@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
+import AppBar from "../components/AppBar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,8 +22,12 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
+        <AppBar />
         <header className="appbar">
-          <div className="container">
+          <div
+            className="container"
+            style={{ marginTop: "-15px", marginBottom: "-45px" }}
+          >
             <Link href="/" className="logo">
               Expense Tracker
             </Link>
