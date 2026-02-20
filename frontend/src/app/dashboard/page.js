@@ -1,18 +1,34 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { getExpenses } from "../../services/api";
 import {
   PieChart,
   Pie,
   BarChart,
   Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
   Cell,
   ResponsiveContainer,
+  CartesianGrid,
+  Legend,
 } from "recharts";
+
+const COLORS = [
+  "#6366F1",
+  "#06B6D4",
+  "#F97316",
+  "#10B981",
+  "#EF4444",
+  "#F59E0B",
+];
+
+const formatCurrency = (value) =>
+  `₹${Number(value || 0).toLocaleString("en-IN")}`;
 
 export default function Dashboard() {
   const [expenses, setExpenses] = useState([]);
@@ -23,14 +39,29 @@ export default function Dashboard() {
     getExpenses().then((res) => setExpenses(res.data));
   }, []);
 
-  // apply date filter (client-side). expense.date expected as YYYY-MM-DD
-  const filteredExpenses = expenses.filter((e) => {
-    if (startDate && e.date < startDate) return false;
-    if (endDate && e.date > endDate) return false;
-    return true;
-  });
+  const filteredExpenses = useMemo(() => {
+    return expenses.filter((e) => {
+      if (startDate && e.date < startDate) return false;
+      if (endDate && e.date > endDate) return false;
+      return true;
+    });
+  }, [expenses, startDate, endDate]);
 
-  // Category breakdown (from filtered data)
+  // ================= KPI CALCULATIONS =================
+  const totalExpense = filteredExpenses.reduce(
+    (sum, e) => sum + parseFloat(e.amount),
+    0,
+  );
+
+  const avgExpense =
+    filteredExpenses.length > 0 ? totalExpense / filteredExpenses.length : 0;
+
+  const highestExpense =
+    filteredExpenses.length > 0
+      ? Math.max(...filteredExpenses.map((e) => parseFloat(e.amount)))
+      : 0;
+
+  // ================= CATEGORY BREAKDOWN =================
   const categoryData = Object.values(
     filteredExpenses.reduce((acc, curr) => {
       acc[curr.category] = acc[curr.category] || {
@@ -42,74 +73,91 @@ export default function Dashboard() {
     }, {}),
   );
 
-  // Monthly trend (from filtered data)
+  // ================= MONTHLY TREND =================
   const monthlyData = Object.values(
     filteredExpenses.reduce((acc, curr) => {
-      const month = curr.date.slice(0, 7); // YYYY-MM
+      const month = curr.date.slice(0, 7);
       acc[month] = acc[month] || { month, total: 0 };
       acc[month].total += parseFloat(curr.amount);
       return acc;
     }, {}),
   );
 
+  // ================= DAILY TREND =================
+  const dailyData = Object.values(
+    filteredExpenses.reduce((acc, curr) => {
+      acc[curr.date] = acc[curr.date] || { date: curr.date, total: 0 };
+      acc[curr.date].total += parseFloat(curr.amount);
+      return acc;
+    }, {}),
+  );
+
   return (
-    <div>
-      <div
-        style={{
-          display: "flex",
-          gap: 12,
-          alignItems: "flex-end",
-          marginBottom: 12,
-        }}
-      >
-        <div
-          className="card"
-          style={{ display: "flex", gap: 12, alignItems: "center" }}
-        >
-          <div style={{ minWidth: 60 }} className="muted">
-            From
-          </div>
+    <div className="max-w-7xl mx-auto px-6 py-6 space-y-8">
+      {/* ================= KPI GRID ================= */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <MetricItem label="Transactions" value={filteredExpenses.length} />
+        <MetricItem
+          label="Highest Expense"
+          value={formatCurrency(highestExpense)}
+        />
+        <MetricItem
+          label="Average Expense"
+          value={formatCurrency(avgExpense)}
+        />
+        <MetricItem
+          label="Total Expense"
+          value={formatCurrency(totalExpense)}
+        />
+      </div>
+
+      {/* ================= FILTER ================= */}
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 flex flex-wrap gap-4 items-end">
+        <div>
+          <label className="block text-sm font-medium mb-1">From</label>
           <input
-            className="input"
             type="date"
+            className="px-3 py-2 border rounded-lg bg-gray-50 dark:bg-gray-800"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
           />
-          <div style={{ minWidth: 40 }} className="muted">
-            To
-          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">To</label>
           <input
-            className="input"
             type="date"
+            className="px-3 py-2 border rounded-lg bg-gray-50 dark:bg-gray-800"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
           />
-          <button
-            className="btn btn-ghost"
-            onClick={() => {
-              setStartDate("");
-              setEndDate("");
-            }}
-          >
-            Reset
-          </button>
         </div>
-        <div style={{ alignSelf: "center" }} className="muted">
-          Showing {filteredExpenses.length} of {expenses.length} items
-        </div>
+
+        <button
+          className="px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg"
+          onClick={() => {
+            setStartDate("");
+            setEndDate("");
+          }}
+        >
+          Reset
+        </button>
       </div>
 
-      <div className="charts">
-        <div className="card chart-card">
-          <div className="title">Category Breakdown</div>
-          <ResponsiveContainer width="100%" height={250}>
+      {/* ================= CHARTS GRID ================= */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* PIE CHART */}
+        <ChartCard title="Category Distribution">
+          <ResponsiveContainer width="100%" height={260}>
             <PieChart>
               <Pie
                 data={categoryData}
                 dataKey="value"
                 nameKey="name"
-                outerRadius={80}
-                fill="#8884d8"
+                outerRadius={90}
+                label={({ name, percent }) =>
+                  `${name} ${(percent * 100).toFixed(0)}%`
+                }
               >
                 {categoryData.map((entry, index) => (
                   <Cell
@@ -118,32 +166,86 @@ export default function Dashboard() {
                   />
                 ))}
               </Pie>
-              <Tooltip />
+              <Tooltip formatter={formatCurrency} />
+              <Legend />
             </PieChart>
           </ResponsiveContainer>
-        </div>
+        </ChartCard>
 
-        <div className="card chart-card">
-          <div className="title">Monthly Trend</div>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={monthlyData} margin={{ left: -12 }}>
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="total" fill={COLORS[0]} />
+        {/* CATEGORY BAR */}
+        <ChartCard title="Category Comparison">
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={categoryData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis tickFormatter={(v) => `₹${v / 1000}k`} />
+              <Tooltip formatter={formatCurrency} />
+              <Bar dataKey="value" fill="#6366F1" />
             </BarChart>
           </ResponsiveContainer>
-        </div>
+        </ChartCard>
+
+        {/* MONTHLY TREND */}
+        <ChartCard title="Monthly Trend">
+          <ResponsiveContainer width="100%" height={260}>
+            <LineChart data={monthlyData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis tickFormatter={(v) => `₹${v / 1000}k`} />
+              <Tooltip formatter={formatCurrency} />
+              <Line
+                type="monotone"
+                dataKey="total"
+                stroke="#06B6D4"
+                strokeWidth={3}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        {/* DAILY TREND */}
+        <ChartCard title="Daily Trend">
+          <ResponsiveContainer width="100%" height={260}>
+            <LineChart data={dailyData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis tickFormatter={(v) => `₹${v / 1000}k`} />
+              <Tooltip formatter={formatCurrency} />
+              <Line
+                type="monotone"
+                dataKey="total"
+                stroke="#10B981"
+                strokeWidth={3}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartCard>
       </div>
     </div>
   );
 }
 
-const COLORS = [
-  "#6366F1",
-  "#06B6D4",
-  "#F97316",
-  "#10B981",
-  "#EF4444",
-  "#F59E0B",
-];
+// ================= KPI COMPONENT =================
+function MetricItem({ label, value }) {
+  return (
+    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md transition">
+      <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+        {label}
+      </div>
+      <div className="mt-3 text-3xl font-bold text-gray-900 dark:text-white">
+        {value}
+      </div>
+      <div className="mt-4 h-1 w-12 bg-indigo-500 rounded-full"></div>
+    </div>
+  );
+}
+
+// ================= CHART CARD COMPONENT =================
+function ChartCard({ title, children }) {
+  return (
+    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      <div className="text-lg font-semibold mb-4">{title}</div>
+      {children}
+    </div>
+  );
+}
