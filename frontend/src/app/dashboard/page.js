@@ -33,7 +33,10 @@ export default function Dashboard() {
   // Category breakdown (from filtered data)
   const categoryData = Object.values(
     filteredExpenses.reduce((acc, curr) => {
-      acc[curr.category] = acc[curr.category] || { name: curr.category, value: 0 };
+      acc[curr.category] = acc[curr.category] || {
+        name: curr.category,
+        value: 0,
+      };
       acc[curr.category].value += parseFloat(curr.amount);
       return acc;
     }, {}),
@@ -51,17 +54,49 @@ export default function Dashboard() {
 
   return (
     <div>
-      <div style={{ display: "flex", gap: 12, alignItems: "flex-end", marginBottom: 12 }}>
-        <div className="card" style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          <div style={{ minWidth: 60 }} className="muted">From</div>
-          <input className="input" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-          <div style={{ minWidth: 40 }} className="muted">To</div>
-          <input className="input" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-          <button className="btn btn-ghost" onClick={() => { setStartDate(""); setEndDate(""); }}>
+      <div
+        style={{
+          display: "flex",
+          gap: 12,
+          alignItems: "flex-end",
+          marginBottom: 12,
+        }}
+      >
+        <div
+          className="card"
+          style={{ display: "flex", gap: 12, alignItems: "center" }}
+        >
+          <div style={{ minWidth: 60 }} className="muted">
+            From
+          </div>
+          <input
+            className="input"
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+          />
+          <div style={{ minWidth: 40 }} className="muted">
+            To
+          </div>
+          <input
+            className="input"
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+          />
+          <button
+            className="btn btn-ghost"
+            onClick={() => {
+              setStartDate("");
+              setEndDate("");
+            }}
+          >
             Reset
           </button>
         </div>
-        <div style={{ alignSelf: "center" }} className="muted">Showing {filteredExpenses.length} of {expenses.length} items</div>
+        <div style={{ alignSelf: "center" }} className="muted">
+          Showing {filteredExpenses.length} of {expenses.length} items
+        </div>
       </div>
 
       <div className="charts">
@@ -69,9 +104,18 @@ export default function Dashboard() {
           <div className="title">Category Breakdown</div>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
-              <Pie data={categoryData} dataKey="value" nameKey="name" outerRadius={80} fill="#8884d8">
+              <Pie
+                data={categoryData}
+                dataKey="value"
+                nameKey="name"
+                outerRadius={80}
+                fill="#8884d8"
+              >
                 {categoryData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={COLORS[index % COLORS.length]}
+                  />
                 ))}
               </Pie>
               <Tooltip />
