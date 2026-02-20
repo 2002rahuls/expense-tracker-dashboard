@@ -18,6 +18,7 @@ import {
   CartesianGrid,
   Legend,
 } from "recharts";
+import { getCurrencyRate } from "../../services/api";
 
 const COLORS = [
   "#6366F1",
@@ -35,6 +36,7 @@ export default function Dashboard() {
   const [expenses, setExpenses] = useState([]);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [rate, setRate] = useState(null);
 
   // ================= REALTIME + INITIAL LOAD =================
   useEffect(() => {
@@ -44,10 +46,16 @@ export default function Dashboard() {
     );
     const loadInitial = async () => {
       try {
-        const res = await getExpenses();
-        if (mounted) setExpenses(res.data);
+        const [expensesRes, rateRes] = await Promise.all([
+          getExpenses(),
+          getCurrencyRate(),
+        ]);
+        if (mounted) {
+          setExpenses(expensesRes.data);
+          setRate(rateRes?.data?.rate ?? null);
+        }
       } catch (err) {
-        console.error("Failed to fetch expenses:", err);
+        console.error("Failed to fetch initial data:", err);
       }
     };
 
@@ -189,6 +197,17 @@ export default function Dashboard() {
           value={formatCurrency(totalExpense)}
         />
       </div>
+
+      {rate && (
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+            Currency Conversion
+          </div>
+          <div className="mt-3 text-2xl font-bold text-gray-900 dark:text-white">
+            1 USD = ₹{Number(rate).toFixed(2)}
+          </div>
+        </div>
+      )}
 
       {/* ================= FILTER ================= */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 flex flex-wrap gap-4 items-end">
