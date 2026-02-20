@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-export default function ExpenseForm({ onSubmit, initialData = {} }) {
+export default function ExpenseForm({ onSubmit, initialData = {}, onCancel }) {
   const data = initialData || {};
 
   const [form, setForm] = useState({
@@ -12,20 +12,27 @@ export default function ExpenseForm({ onSubmit, initialData = {} }) {
     notes: data.notes || "",
   });
 
+  useEffect(() => {
+    setForm({
+      amount: data.amount || "",
+      category: data.category || "Food",
+      date: data.date || "",
+      notes: data.notes || "",
+    });
+  }, [initialData]);
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSubmit(form);
+    await onSubmit(form);
 
-    setForm({
-      amount: "",
-      category: "Food",
-      date: "",
-      notes: "",
-    });
+    // After creating, clear the form. When editing, parent will clear initialData.
+    if (!initialData?.id) {
+      setForm({ amount: "", category: "Food", date: "", notes: "" });
+    }
   };
 
   return (
@@ -90,13 +97,24 @@ export default function ExpenseForm({ onSubmit, initialData = {} }) {
           />
         </div>
 
-        <button
-          type="submit"
-          className="btn btn-primary"
-          style={{ width: "100%" }}
-        >
-          {initialData?.id ? "Update Expense" : "Save Expense"}
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
+            {initialData?.id ? "Update Expense" : "Save Expense"}
+          </button>
+
+          {initialData?.id && (
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => {
+                if (onCancel) onCancel();
+              }}
+              style={{ minWidth: 110 }}
+            >
+              Cancel
+            </button>
+          )}
+        </div>
       </form>
     </div>
   );

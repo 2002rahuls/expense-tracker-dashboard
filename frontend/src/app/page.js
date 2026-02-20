@@ -58,6 +58,7 @@ export default function Home() {
           <ExpenseForm
             onSubmit={editing ? handleUpdate : handleCreate}
             initialData={editing}
+            onCancel={() => setEditing(null)}
           />
         </div>
 
