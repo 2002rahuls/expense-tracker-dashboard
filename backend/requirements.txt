@@ -8,9 +8,7 @@ djangorestframework==3.14.0
 gunicorn==25.1.0
 idna==3.11
 packaging==26.0
-psycopg==3.3.3
-psycopg-binary==3.3.3
-psycopg2==2.9.11
+psycopg[binary]==3.3.3
 python-dotenv==1.2.1
 pytz==2025.2
 requests==2.32.5
