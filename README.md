@@ -228,6 +228,42 @@ NEXT_PUBLIC_API_URL=https://your-cloud-run-url/api/
 
 ---
 
+## How to test
+
+This section describes manual test flows for the main app features.
+
+- UI flow to test CRUD (step-by-step):
+  1. Open the app in your browser (local: `http://localhost:3000`, or production URL).
+
+2. On first load you'll see the demo auth gate — sign in with `admin` / `admin`.
+3. Create (POST via UI): Go to the main page and use the "Add Expense" form.
+   - Fill `Amount`, choose a `Category`, set a `Date`, and optional `Notes`.
+   - Click `Save Expense` — the new item should appear in the list immediately.
+4. Read (GET via UI/API): Verify the item exists in the list and call the API:
+   - GET `/api/expenses/` should return the created expense JSON.
+   - Example: `curl -s GET ${BASE_URL:-http://localhost:8000}/api/expenses/`
+5. Update (PUT via UI/API): Click Edit on an expense, change a field, and Save.
+   - Confirm the list updates and `GET /api/expenses/{id}/` shows updated values.
+6. Delete (DELETE via UI/API): Use the Delete action on an expense and confirm it is removed.
+   - Confirm `GET /api/expenses/{id}/` returns 404 after deletion.
+
+- Report / visualization page path:
+  - Dashboard path: `/dashboard`
+  - Visit `/dashboard` to view category distribution, monthly and daily trends, and KPI tiles.
+  - Expected behavior: charts render from the `/api/expenses/` data; creating/updating/deleting expenses should reflect in the charts (and, if enabled, realtime updates will stream changes).
+
+- Third-party API feature paths (how to test):
+  - Currency conversion: `GET /api/currency-rate/`
+    - Example: `curl ${BASE_URL:-http://localhost:8000}/api/currency-rate/`
+    - Dashboard will show conversion rate in the top-area card if available.
+  - Headlines / News integration: `GET /api/news/`
+    - Example: `curl ${BASE_URL:-http://localhost:8000}/api/news/`
+    - Ensure your `NEWS_API_KEY` is set in backend `.env` for headlines to load.
+
+Tips
+
+- If realtime updates are enabled (Supabase), check browser console for subscription logs and websocket connectivity.
+
 ## Notes
 
 - Static files are handled using `whitenoise`
