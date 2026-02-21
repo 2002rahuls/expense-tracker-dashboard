@@ -2,6 +2,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 import AppBar from "../components/AppBar";
+import AuthGate from "../components/AuthGate";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,24 +23,26 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <AppBar />
-        <header className="appbar">
-          <div
-            className="container"
-            style={{ marginTop: "-15px", marginBottom: "-45px" }}
-          >
-            <Link href="/" className="logo">
-              Expense Tracker
-            </Link>
-            <nav className="nav">
-              <Link href="/dashboard" className="btn btn-ghost">
-                Dashboard
+        <AuthGate>
+          <AppBar />
+          <header className="appbar">
+            <div
+              className="container"
+              style={{ marginTop: "-15px", marginBottom: "-45px" }}
+            >
+              <Link href="/" className="logo">
+                Expense Tracker
               </Link>
-            </nav>
-          </div>
-        </header>
+              <nav className="nav">
+                <Link href="/dashboard" className="btn btn-ghost">
+                  Dashboard
+                </Link>
+              </nav>
+            </div>
+          </header>
 
-        <main>{children}</main>
+          <main>{children}</main>
+        </AuthGate>
       </body>
     </html>
   );
