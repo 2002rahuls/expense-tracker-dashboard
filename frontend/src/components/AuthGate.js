@@ -3,16 +3,18 @@
 import { useState, useEffect } from "react";
 
 export default function AuthGate({ children }) {
-  const [auth, setAuth] = useState(null);
-  const [user, setUser] = useState("");
-  const [pass, setPass] = useState("");
+  const [auth,  setAuth]  = useState(null); // null = loading
+  const [user,  setUser]  = useState("");
+  const [pass,  setPass]  = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [showPass, setShowPass] = useState(false);
 
   useEffect(() => {
     try {
       const ok = localStorage.getItem("isAuthenticated") === "true";
       setAuth(ok);
-    } catch (e) {
+    } catch {
       setAuth(false);
     }
   }, []);
@@ -21,10 +23,14 @@ export default function AuthGate({ children }) {
     e.preventDefault();
     setError("");
     if (user === "admin" && pass === "admin") {
-      localStorage.setItem("isAuthenticated", "true");
-      setAuth(true);
+      setLoading(true);
+      setTimeout(() => {
+        localStorage.setItem("isAuthenticated", "true");
+        setAuth(true);
+        setLoading(false);
+      }, 500);
     } else {
-      setError("Invalid username or password");
+      setError("Invalid username or password. Try admin / admin.");
     }
   };
 
@@ -35,87 +41,127 @@ export default function AuthGate({ children }) {
     setPass("");
   };
 
+  // Still reading localStorage ── render nothing to avoid flash
   if (auth === null) return null;
 
+  // ── Login screen ──────────────────────────────────────────────────────────
   if (!auth) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 20,
-        }}
-      >
-        <div className="card" style={{ width: 360 }}>
-          <h2 className="title">Sign in</h2>
+      <div className="auth-wrap">
+        <div className="card auth-card">
+          {/* Logo */}
+          <div className="auth-logo">
+            <div className="auth-logo-icon">💳</div>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: "1.05rem", color: "var(--text-primary)", letterSpacing: "-0.3px" }}>
+                Expense Tracker
+              </div>
+              <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                Personal Finance Dashboard
+              </div>
+            </div>
+          </div>
 
-          <form onSubmit={submit} className="space-y-4">
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <label className="label">Username</label>
+          <h1 className="text-h2" style={{ marginBottom: 4 }}>Welcome back</h1>
+          <p className="text-sm text-muted" style={{ marginBottom: 28 }}>
+            Sign in to your account to continue
+          </p>
+
+          <form onSubmit={submit} noValidate>
+            <div className="form-field">
+              <label className="form-label" htmlFor="username">Username</label>
               <input
+                id="username"
                 name="username"
                 value={user}
                 onChange={(e) => setUser(e.target.value)}
                 className="input"
-                placeholder="username"
+                placeholder="Enter username"
                 autoFocus
+                autoComplete="username"
               />
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <label className="label">Password</label>
-              <input
-                name="password"
-                type="password"
-                value={pass}
-                onChange={(e) => setPass(e.target.value)}
-                className="input"
-                placeholder="password"
-              />
+            <div className="form-field">
+              <label className="form-label" htmlFor="password">Password</label>
+              <div style={{ position: "relative" }}>
+                <input
+                  id="password"
+                  name="password"
+                  type={showPass ? "text" : "password"}
+                  value={pass}
+                  onChange={(e) => setPass(e.target.value)}
+                  className="input"
+                  placeholder="Enter password"
+                  autoComplete="current-password"
+                  style={{ paddingRight: 44 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPass((s) => !s)}
+                  style={{
+                    position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+                    background: "none", border: "none", cursor: "pointer",
+                    color: "var(--text-muted)", fontSize: 14, padding: 4,
+                  }}
+                  aria-label={showPass ? "Hide password" : "Show password"}
+                >
+                  {showPass ? "🙈" : "👁️"}
+                </button>
+              </div>
             </div>
 
             {error && (
-              <div style={{ color: "var(--danger)", fontSize: 13 }}>
+              <div style={{
+                padding: "10px 14px", borderRadius: 8, marginBottom: 16,
+                background: "var(--danger-muted)", color: "var(--danger)",
+                fontSize: 13, fontWeight: 500,
+              }}>
                 {error}
               </div>
             )}
 
-            <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
-              <button
-                type="submit"
-                className="btn btn-primary"
-                style={{ flex: 1 }}
-              >
-                Sign in
-              </button>
-            </div>
+            <button
+              type="submit"
+              className="btn btn-primary btn-full"
+              disabled={loading || !user || !pass}
+            >
+              {loading ? "Signing in…" : "Sign in"}
+            </button>
           </form>
 
-          <div style={{ marginTop: 12, fontSize: 12, color: "var(--muted)" }}>
-            Use username <strong>admin</strong> and password{" "}
-            <strong>admin</strong>
+          <div style={{
+            marginTop: 20, padding: "12px 16px", borderRadius: 8,
+            background: "var(--surface-hover)", fontSize: 12,
+            color: "var(--text-muted)", textAlign: "center",
+          }}>
+            Demo credentials: <strong style={{ color: "var(--text-secondary)" }}>admin</strong> / <strong style={{ color: "var(--text-secondary)" }}>admin</strong>
           </div>
         </div>
       </div>
     );
   }
 
+  // ── Authenticated layout ──────────────────────────────────────────────────
   return (
-    <div
-      style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}
-    >
-      <div style={{ display: "flex", justifyContent: "flex-end", padding: 12 }}>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      {/* Pass logout to children via cloneElement on AppBar — 
+          instead we surface it as a button inside children context.
+          We inject a tiny logout bar for simplicity. */}
+      <div style={{
+        position: "fixed", bottom: 24, right: 24, zIndex: 200,
+      }}>
         <button
-          className="btn btn-ghost"
+          className="btn btn-ghost btn-sm"
           onClick={logout}
-          style={{ marginRight: 12 }}
+          style={{
+            boxShadow: "var(--shadow-md)",
+            background: "var(--surface)",
+          }}
         >
-          Logout
+          Log out
         </button>
       </div>
-
       <div style={{ flex: 1 }}>{children}</div>
     </div>
   );
