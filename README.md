@@ -6,7 +6,7 @@ Full-stack expense tracking application using Django (backend) and Next.js (fron
 
 ## Demo Video
 
-[![Watch the demo](https://img.youtube.com/vi/VIDEO_ID/0.jpg)](https://youtu.be/VIDEO_ID)
+[Watch the Demo Video](https://drive.google.com/file/d/1YGh8WjeWmJn2UElwWpvZ6Ikyw9ClpPYZ/view?usp=drive_link)
 
 ## Architecture
 
